@@ -13,7 +13,9 @@ class Router
         foreach ($this->routes as $route) {
             $params = [];
             if ($route['method'] === strtoupper($requestMethod) && $this->match($route['path'], $requestUri, $params)) {
-                call_user_func_array($route['handler'], $params);
+                $controller = new $route['handler'][0]();
+                $method = $route['handler'][1];
+                $controller->$method($params);
                 return;
             }
         }

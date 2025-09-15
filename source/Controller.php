@@ -2,30 +2,37 @@
 
 class Controller
 {
-    private PDO $db;
+    protected PDO $db;
+
     public function __construct()
     {
-        $this->db = new PDO("sqlite:database.db");
+        ///home/bruher/projects/lab1/source/db/database.db
+        $path = dirname(__DIR__) . '/source/db/database.db';
+        $this->db = new PDO("sqlite:$path");
     }
 
-    public static function home(): void
+    public function home(): void
     {
         $path = dirname(__DIR__) . '/public/index.html';
         $html = file_get_contents($path);
         echo $html;
     }
 
-    public static function index(): string
+    public function index(): void
     {
-        echo 'index';
+        $variants = $this->db->query('SELECT * FROM variants')->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode([
+            'success' => true,
+            'variants' => $variants,
+        ]);
     }
 
-    public static function store(): string
+    public function store(): string
     {
         var_dump($_POST);
     }
 
-    public static function show(string $variant_id): string
+    public function show(string $variant_id): string
     {
         if (!is_numeric($variant_id)) {
             return self::errorResponse('Variant ID must be numeric');
@@ -33,17 +40,16 @@ class Controller
         echo 'show';
     }
 
-    public static function scheme(): string
+    public function scheme(): string
     {
         echo 'scheme';
     }
 
-    private static function successResponse(string $message, array $data = []): string
+    private function successResponse(string $message, array $data = []): string
     {
-
     }
 
-    private static function errorResponse(string $message): string
+    private function errorResponse(string $message): string
     {
         return json_encode($message, JSON_PRETTY_PRINT);
     }
