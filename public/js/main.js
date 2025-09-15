@@ -19,8 +19,10 @@ $(function () {
                     if (first === true) {
                         first = false;
                         sendMessage('Вы загадали животное ' + variant.name + '?');
+                        console.log($(this))
                         $answerButtons.on('click', function () {
                             answer = $(this).val();
+                            console.log(answer);
                             if (answer === variant.answer) {
                                 win();
                             }
