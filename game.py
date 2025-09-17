@@ -21,7 +21,7 @@ class Game:
         self.new_question = None
         self.new_answer = None
         self.adding_new = False
-
+        self.log = []
         # Создаем основное окно
         self.root = tk.Tk()
         self.root.title('Quiz')
@@ -32,30 +32,36 @@ class Game:
         self.lbl.place(x=225, y=100, anchor='center')
 
         # Создаем кнопку начала игры
-        self.btnStartGame = tk.Button(self.root, text='Начать игру', command=self.play)
-        self.btnStartGame.place(x=225, y=150, anchor='center')
+        self.btn_start_game = tk.Button(self.root, text='Начать игру', command=self.play)
+        self.btn_start_game.place(x=225, y=150, anchor='center')
 
         # Кнопка перезапуска
         self.btnReset = tk.Button(self.root, text='Перезапуск', fg='black', command=self.reset)
         self.btnReset.place(x=390, y=280, anchor='center')
 
+        # Кнопка отображения лога игры
+        self.btnLog = tk.Button(self.root, text='Показать путь до ответа', fg='black', command=self.show_log)
+
+        # Кнопка отображения схемы БД
+        self.btnBD = tk.Button(self.root, text='Показать БД', fg='black', command=self.show_bd)
+
         # Создаем кнопки Да/Нет
-        self.btnYes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
-        self.btnNo = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
+        self.btn_yes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
+        self.btn_no = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
 
         # Создаем поле для ввода
         self.text_input = tk.Entry(self.root, width=20)
 
         # Создаем кнопку ввода
-        self.btnConfirm = tk.Button(self.root, text='Подтвердить', fg='green', command=self.confirm_clicked)
+        self.btn_confirm = tk.Button(self.root, text='Подтвердить', fg='green', command=self.confirm_clicked)
 
     # Запускаем игру
     def play(self):
         self.lbl.configure(text='Вы загадали животное?')
-        self.btnStartGame.place_forget()
+        self.btn_start_game.place_forget()
 
-        self.btnYes.place(x=175, y=150, anchor='center')
-        self.btnNo.place(x=275, y=150, anchor='center')
+        self.btn_yes.place(x=175, y=150, anchor='center')
+        self.btn_no.place(x=275, y=150, anchor='center')
 
         self.waiting_for_answer = True
 
@@ -72,13 +78,36 @@ class Game:
         self.adding_new = False
         self.lbl.configure(text='Нажмите "Начать игру"')
         self.lbl.place(x=225, y=100, anchor='center')
-        self.btnStartGame.place(x=225, y=150, anchor='center')
-        self.btnYes.place_forget()
-        self.btnNo.place_forget()
+        self.btn_start_game.place(x=225, y=150, anchor='center')
+        self.btn_yes.place_forget()
+        self.btn_no.place_forget()
+        self.btn_confirm.place_forget()
+        self.text_input.place_forget()
+        self.btnLog.place_forget()
+
+    # Отображение лога
+    def show_log(self):
+        output = ''
+        self.log.pop(0)
+        for word in self.log:
+            if word == '0':
+                word = 'Нет'
+            elif word == '1':
+                word = 'Да'
+            output += word + '->'
+
+        output = output[:-2]
+        self.btnLog.place_forget()
+        self.lbl.configure(text=output)
+
+    # Отображение схемы БД
+    def show_bd(self):
+        print(1)
 
     # Нажатие "Да"
     def yes_clicked(self):
         self.current_answer = '1'
+        self.log.append(self.current_answer)
         if not self.adding_new:
             self.process_answer()
         else:
@@ -88,6 +117,7 @@ class Game:
     # Нажатие "Нет"
     def no_clicked(self):
         self.current_answer = '0'
+        self.log.append(self.current_answer)
         if not self.adding_new:
             self.process_answer()
         else:
@@ -114,17 +144,17 @@ class Game:
                 self.new_question += '?'
             self.lbl.configure(text='Для ' + self.new_name + ' ответ "Да" или "Нет"?')
             self.text_input.place_forget()
-            self.btnConfirm.place_forget()
-            self.btnYes.place(x=175, y=150, anchor='center')
-            self.btnNo.place(x=275, y=150, anchor='center')
+            self.btn_confirm.place_forget()
+            self.btn_yes.place(x=175, y=150, anchor='center')
+            self.btn_no.place(x=275, y=150, anchor='center')
             self.text_input.delete(0, END)
             self.waiting_for_answer = True
         elif self.new_answer is None:
             self.new_answer = self.current_answer
             self.save_new_creature()
             self.lbl.configure(text='Спасибо! Я узнал новое животное!')
-            self.btnNo.place_forget()
-            self.btnYes.place_forget()
+            self.btn_no.place_forget()
+            self.btn_yes.place_forget()
 
     # Сохраняем новое существо в БД
     def save_new_creature(self):
@@ -142,6 +172,7 @@ class Game:
         question = self.variants[self.current_variant]['question']
         self.lbl.configure(text=question)
         self.waiting_for_answer = True
+        self.log.append(question)
 
     # Предполагаем имя существа
     def ask_name(self):
@@ -149,14 +180,21 @@ class Game:
         self.lbl.configure(text=question)
         self.waiting_for_answer = True
         self.waiting_for_name = True
+        self.log.append(question)
+
+    # Если игрок не загадал животное
+    def cant_start(self):
+        self.lbl.configure(text='Вы должны загадать животное, чтобы начать!')
+        self.btn_no.place_forget()
+        self.btn_yes.place_forget()
 
     # Сдаемся и просим добавить существо
     def give_up(self):
         self.lbl.configure(text="Я сдаюсь! Какое животное вы загадали?")
-        self.btnYes.place_forget()
-        self.btnNo.place_forget()
+        self.btn_yes.place_forget()
+        self.btn_no.place_forget()
         self.text_input.place(x=225, y=130, anchor='center')
-        self.btnConfirm.place(x=225, y=180, anchor='center')
+        self.btn_confirm.place(x=225, y=180, anchor='center')
         self.waiting_for_answer = True
         self.waiting_for_name = False
         self.new_name = None
@@ -165,10 +203,12 @@ class Game:
 
     # Побеждаем
     def win(self):
-        answer = self.variants[self.current_variant]['name']
-        self.lbl.configure(text='Это точно ' + answer + '!')
-        self.btnYes.place_forget()
-        self.btnNo.place_forget()
+        answer = 'Это точно ' + self.variants[self.current_variant]['name'] + '!'
+        self.lbl.configure(text=answer)
+        self.log.append(answer)
+        self.btn_yes.place_forget()
+        self.btn_no.place_forget()
+        self.btnLog.place(x=225, y=100, anchor='center')
 
     # Обрабатываем ответ
     def process_answer(self):
@@ -181,7 +221,10 @@ class Game:
         if self.current_variant == -1:
             if self.current_answer == '1':
                 self.current_variant += 1
-                self.ask_question()
+                self.ask_name()
+            else:
+                self.cant_start()
+            return
 
         # Процесс игры - задаем вопросы
         if not self.waiting_for_name:
