@@ -1,5 +1,6 @@
 import tkinter as tk
 import uuid
+from tkinter import ttk
 from tkinter import *
 import sqlite3
 
@@ -133,8 +134,76 @@ class Game:
         self.lbl.configure(text=output)
 
     def show_bd(self):
-        output = self.build_tree(self.full_variants)
-        print(output)
+        """Создает и отображает окно с древовидной структурой БД"""
+        # Создаем новое окно
+        db_window = tk.Toplevel(self.root)
+        db_window.title("Структура базы данных")
+        db_window.geometry("600x400")
+
+        # Создаем фрейм для Treeview и scrollbar
+        tree_frame = ttk.Frame(db_window)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Создаем Treeview с двумя колонками
+        tree = ttk.Treeview(tree_frame, columns=("type", "answer"), show="tree headings")
+        tree.column("#0", width=300, anchor=tk.W)
+        tree.column("type", width=100, anchor=tk.CENTER)
+        tree.column("answer", width=100, anchor=tk.CENTER)
+
+        tree.heading("#0", text="Вопрос / Существо")
+        tree.heading("type", text="Тип")
+        tree.heading("answer", text="Ответ родителя")
+
+        tree.tag_configure('question', background='#e6f3ff')
+        tree.tag_configure('creature', background='#f0f8e6')
+
+        # Добавляем scrollbar
+        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Загружаем данные из БД
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM variants ORDER BY parent_id, parent_answer")
+        items = cursor.fetchall()
+        conn.close()
+
+        # Создаем словарь для быстрого доступа к элементам по id
+        items_by_id = {item['id']: item for item in items}
+        node_ids = {}  # Для хранения соответствия id записей и id узлов в treeview
+
+        # Сначала находим корневые элементы (без parent_id)
+        roots = [item for item in items if item['parent_id'] is None]
+
+        # Рекурсивная функция для добавления элементов в treeview
+        def add_node(parent_tree_id, db_item):
+            # Определяем текст для колонок
+            item_text = db_item['name']
+            item_type = "Вопрос" if db_item['is_question'] else "Существо"
+            parent_answer = db_item['parent_answer'] if db_item['parent_answer'] is not None else ""
+
+            # Выбираем тег в зависимости от типа
+            tag = 'question' if db_item['is_question'] else 'creature'
+
+            # Вставляем узел в treeview
+            tree_id = tree.insert(parent_tree_id, "end", text=item_text,
+                                  values=(item_type, parent_answer), tags=(tag))
+            node_ids[db_item['id']] = tree_id
+
+            # Находим дочерние элементы
+            children = [item for item in items if item['parent_id'] == db_item['id']]
+            for child in children:
+                add_node(tree_id, child)
+
+        # Добавляем все корневые элементы
+        for root_item in roots:
+            add_node("", root_item)
+
+        # Разворачиваем все узлы для первоначального view
+        for node in tree.get_children():
+            tree.item(node, open=True)
 
     def yes_clicked(self):
         self.current_answer = '1'
@@ -301,7 +370,20 @@ class Game:
                     self.give_up()
 
     def get_db_connection(self):
-        conn = sqlite3.connect('database.db')
+        """Возвращает соединение с базой данных, работает в обоих режимах"""
+        import sys
+        import os
+
+        # Определяем путь к базе данных в зависимости от режима
+        if getattr(sys, 'frozen', False):
+            # Если приложение упаковано
+            base_path = sys._MEIPASS
+        else:
+            # Если приложение запущено из исходного кода
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+        db_path = os.path.join(base_path, 'database.db')
+        conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         return conn
 
