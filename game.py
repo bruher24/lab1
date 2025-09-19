@@ -6,17 +6,12 @@ import sqlite3
 
 class Game:
     def __init__(self):
-        # Создаем таблицу, если ее еще нет
         self.init_db()
 
-        # Загружаем существующие варианты
         self.full_variants = self.load_creatures_from_db()
 
         self.variants = self.build_tree(self.full_variants)
 
-        print(self.variants)
-
-        # Инициализируем переменные
         self.current_answer = None
         self.waiting_for_answer = False
         self.waiting_for_name = False
@@ -31,46 +26,35 @@ class Game:
         self.adding_new = False
         self.log = []
 
-        # Создаем основное окно
         self.root = tk.Tk()
-        self.root.title('Quiz')
+        self.root.title('Угадайка: мифические существа')
         self.root.geometry('450x300')
 
-        # Создаем лейбл
         self.lbl = tk.Label(self.root, text='Нажмите "Начать игру"')
         self.lbl.place(x=225, y=100, anchor='center')
 
-        # Создаем кнопку начала игры
         self.btn_start_game = tk.Button(self.root, text='Начать игру', command=self.play)
         self.btn_start_game.place(x=225, y=150, anchor='center')
 
-        # Кнопка перезапуска
         self.btnReset = tk.Button(self.root, text='Перезапуск', fg='black', command=self.reset)
         self.btnReset.place(x=390, y=280, anchor='center')
 
-        # Кнопка отображения лога игры
-        self.btnLog = tk.Button(self.root, text='Показать путь до ответа', fg='black', command=self.show_log)
+        self.btn_log = tk.Button(self.root, text='Показать путь до ответа', fg='black', command=self.show_log)
 
-        # Кнопка отображения схемы БД
-        self.btnBD = tk.Button(self.root, text='Показать БД', fg='black', command=self.show_bd)
-        self.btnBD.place(x=390, y=240, anchor='center')
+        self.btn_bd = tk.Button(self.root, text='Показать БД', fg='black', command=self.show_bd)
+        self.btn_bd.place(x=390, y=240, anchor='center')
 
-        # Создаем кнопки Да/Нет
         self.btn_yes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
         self.btn_no = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
 
-        # Создаем поле для ввода
         self.text_input = tk.Entry(self.root, width=20)
 
-        # Создаем кнопку ввода
         self.btn_confirm = tk.Button(self.root, text='Подтвердить', fg='green', command=self.confirm_clicked)
 
-    # Формируем дерево из данных БД
     def build_tree(self, variants):
         nodes = {}
         root = None
 
-        # Создаем узлы
         for item in variants:
             node_id = item['id']
             nodes[node_id] = {
@@ -82,7 +66,7 @@ class Game:
             }
             if item['parent_id'] is None:
                 root = node_id
-        # Создаем связи
+
         for item in variants:
             if item['parent_id'] is not None:
                 parent = nodes[item['parent_id']]
@@ -91,9 +75,8 @@ class Game:
 
         return {str(root): nodes[root]} if root is not None else {}
 
-    # Запускаем игру
     def play(self):
-        self.lbl.configure(text='Вы загадали животное?')
+        self.lbl.configure(text='Вы загадали мифическое существо?')
         self.btn_start_game.place_forget()
 
         self.btn_yes.place(x=175, y=150, anchor='center')
@@ -101,7 +84,6 @@ class Game:
 
         self.waiting_for_answer = True
 
-    # Перезапуск игры
     def reset(self):
         self.current_answer = None
         self.waiting_for_answer = False
@@ -123,10 +105,9 @@ class Game:
         self.btn_no.place_forget()
         self.btn_confirm.place_forget()
         self.text_input.place_forget()
-        self.btnLog.place_forget()
+        self.btn_log.place_forget()
         self.variants = self.build_tree(self.full_variants)
 
-    # Отображение лога
     def show_log(self):
         output = ''
         self.log.pop(0)
@@ -148,15 +129,13 @@ class Game:
         if output[-2:] != '\n':
             output = output[:-2]
 
-        self.btnLog.place_forget()
+        self.btn_log.place_forget()
         self.lbl.configure(text=output)
 
-    # Отображение схемы БД
     def show_bd(self):
         output = self.build_tree(self.full_variants)
         print(output)
 
-    # Нажатие "Да"
     def yes_clicked(self):
         self.current_answer = '1'
         self.log.append(self.current_answer)
@@ -166,7 +145,6 @@ class Game:
             self.adding_new = False
             self.new_creature()
 
-    # Нажатие "Нет"
     def no_clicked(self):
         self.current_answer = '0'
         self.log.append(self.current_answer)
@@ -176,19 +154,24 @@ class Game:
             self.adding_new = False
             self.new_creature()
 
-    # Нажатие "Подтвердить"
     def confirm_clicked(self):
         self.adding_new = True
         self.text_buffer = self.text_input.get().strip()
         if self.text_buffer:
             self.new_creature()
 
-    # Спрашиваем данные о новом существе
     def new_creature(self):
-        if self.new_name is None:
+        if str(self.current_obj['is_question']) == '1':
             self.new_name = self.text_buffer.capitalize()
-            self.lbl.configure(
-                text='Что отличает ' + self.new_name + ' от ' + self.current_obj['name'] + '?')
+            self.new_parent_answer = self.current_answer
+            self.save_new_creature()
+            self.lbl.configure(text='Спасибо! Я узнал новое существо!')
+            self.btn_confirm.place_forget()
+            self.text_input.delete(0, END)
+            self.text_input.place_forget()
+        elif self.new_name is None:
+            self.new_name = self.text_buffer.capitalize()
+            self.lbl.configure(text='Что отличает ' + self.new_name + ' от ' + self.current_obj['name'] + '?')
             self.text_input.delete(0, END)
             self.waiting_for_answer = True
         elif self.new_question is None:
@@ -205,23 +188,23 @@ class Game:
         elif self.new_parent_answer is None:
             self.new_parent_answer = self.current_answer
             self.save_new_creature()
-            self.lbl.configure(text='Спасибо! Я узнал новое животное!')
+            self.lbl.configure(text='Спасибо! Я узнал новое существо!')
             self.btn_no.place_forget()
             self.btn_yes.place_forget()
 
-    # Сохраняем новое существо в БД
     def save_new_creature(self):
-        print(self.current_obj['id'])
-
         conn = self.get_db_connection()
         cursor = conn.cursor()
-        new_parent_id = str(uuid.uuid4())
 
-        cursor.execute("""
-            INSERT OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
-            VALUES (?, ?, ?, ?, ?)
-        """,
-                       (new_parent_id, self.new_question, self.last_answer, str(self.current_obj['id']), 1))
+        new_parent_id = self.current_obj['id']
+
+        if str(self.current_obj['is_question']) == '0':
+            new_parent_id = str(uuid.uuid4())
+            cursor.execute("""
+                INSERT OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
+                VALUES (?, ?, ?, ?, ?)
+            """,
+                           (new_parent_id, self.new_question, self.last_answer, str(self.current_obj['id']), 1))
 
         cursor.execute("""
                     INSERT OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
@@ -232,9 +215,9 @@ class Game:
         conn.commit()
         conn.close()
 
-        self.variants = self.load_creatures_from_db()
+        self.full_variants = self.load_creatures_from_db()
+        self.variants = self.build_tree(self.full_variants)
 
-    # Задаем вопрос, указанный для существа
     def ask_question(self):
         self.current_obj = self.variants[str(self.current_variant)]
         question = self.variants[str(self.current_variant)]['name']
@@ -243,7 +226,6 @@ class Game:
         self.waiting_for_name = False
         self.log.append(question)
 
-    # Предполагаем имя существа
     def ask_name(self):
         self.current_obj = self.variants[str(self.current_variant)]
         question = 'Это ' + self.variants[str(self.current_variant)]['name'] + '?'
@@ -252,15 +234,13 @@ class Game:
         self.waiting_for_name = True
         self.log.append(question)
 
-    # Если игрок не загадал животное
     def cant_start(self):
-        self.lbl.configure(text='Вы должны загадать животное, чтобы начать!')
+        self.lbl.configure(text='Вы должны загадать мифическое существо, чтобы начать!')
         self.btn_no.place_forget()
         self.btn_yes.place_forget()
 
-    # Сдаемся и просим добавить существо
     def give_up(self):
-        self.lbl.configure(text="Я сдаюсь! Какое животное вы загадали?")
+        self.lbl.configure(text="Я сдаюсь! Какое существо вы загадали?")
         self.btn_yes.place_forget()
         self.btn_no.place_forget()
         self.text_input.place(x=225, y=130, anchor='center')
@@ -270,25 +250,24 @@ class Game:
         self.new_name = None
         self.new_question = None
         self.new_answer = None
+        self.new_parent_answer = None
         self.last_answer = self.current_answer
 
-    # Побеждаем
     def win(self):
         answer = 'Это точно ' + self.variants[str(self.current_variant)]['name'] + '!'
         self.lbl.configure(text=answer)
         self.log.append(answer)
         self.btn_yes.place_forget()
         self.btn_no.place_forget()
-        self.btnLog.place(x=225, y=150, anchor='center')
+        self.btn_log.place(x=225, y=150, anchor='center')
 
-    # Обрабатываем ответ
     def process_answer(self):
         if not self.waiting_for_answer:
             return
 
         self.waiting_for_answer = False
 
-        # Начало игры - первая попытка угадать
+        # Первая попытка угадать
         if self.current_variant is None:
             if self.current_answer == '1':
                 self.current_variant = 1
@@ -297,7 +276,7 @@ class Game:
                 self.cant_start()
             return
 
-        # Процесс игры - задаем вопросы
+        # Вопросы
         if not self.waiting_for_name:
             if str(self.current_answer) == '1':
                 self.variants = self.variants[str(self.current_variant)]['yes']
@@ -321,13 +300,11 @@ class Game:
                 else:
                     self.give_up()
 
-    # Подключение к БД
     def get_db_connection(self):
         conn = sqlite3.connect('database.db')
         conn.row_factory = sqlite3.Row
         return conn
 
-    # Создаем таблицу и начальные данные, если не существует
     def init_db(self):
         conn = self.get_db_connection()
         cursor = conn.cursor()
@@ -358,7 +335,6 @@ class Game:
         conn.close()
         return creatures
 
-    # Запуск всего приложения
     def run(self):
         self.root.mainloop()
 
