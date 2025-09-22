@@ -3,6 +3,7 @@ import uuid
 from tkinter import ttk
 from tkinter import *
 import sqlite3
+from tkinter import messagebox
 
 
 class Game:
@@ -44,6 +45,9 @@ class Game:
 
         self.btn_bd = tk.Button(self.root, text='Показать БД', fg='black', command=self.show_bd)
         self.btn_bd.place(x=390, y=240, anchor='center')
+
+        self.btn_search = tk.Button(self.root, text='Поиск существа', fg='black', command=self.open_search_window)
+        self.btn_search.place(x=50, y=280, anchor='center')
 
         self.btn_yes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
         self.btn_no = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
@@ -172,12 +176,18 @@ class Game:
         def add_node(parent_tree_id, db_item):
             item_text = db_item['name']
             item_type = "Вопрос" if db_item['is_question'] else "Существо"
-            parent_answer = db_item['parent_answer'] if db_item['parent_answer'] is not None else ""
+            parent_answer = db_item['parent_answer']
+            if parent_answer is None:
+                answer_text = ''
+            elif parent_answer == 1:
+                answer_text = 'Да'
+            else:
+                answer_text = 'Нет'
 
             tag = 'question' if db_item['is_question'] else 'creature'
 
             tree_id = tree.insert(parent_tree_id, "end", text=item_text,
-                                  values=(item_type, parent_answer), tags=(tag))
+                                  values=(item_type, answer_text), tags=(tag))
             node_ids[db_item['id']] = tree_id
 
             children = [item for item in items if item['parent_id'] == db_item['id']]
@@ -189,6 +199,99 @@ class Game:
 
         for node in tree.get_children():
             tree.item(node, open=True)
+
+    def open_search_window(self):
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Поиск существа")
+        search_window.geometry("400x150")
+
+        lbl = tk.Label(search_window, text="Введите название существа:")
+        lbl.pack(pady=10)
+
+        entry = tk.Entry(search_window, width=30)
+        entry.pack(pady=5)
+
+        def search_creature():
+            name = entry.get().strip().lower().capitalize()
+            if not name:
+                messagebox.showwarning("Предупреждение", "Введите название существа")
+                return
+
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM variants WHERE name = ? AND is_question = 0", (name,))
+            creature = cursor.fetchone()
+
+            if creature:
+                self.show_creature_path(creature, search_window)
+            else:
+                messagebox.showinfo("Результат поиска", f"Существо '{name}' не найдено в базе данных")
+
+            conn.close()
+
+        search_btn = tk.Button(search_window, text="Найти", command=search_creature)
+        search_btn.pack(pady=5)
+
+    def show_creature_path(self, creature, parent_window):
+        path_window = tk.Toplevel(parent_window)
+        path_window.title(f"Путь до существа: {creature['name']}")
+        path_window.geometry("500x300")
+
+        path = self.get_path_to_creature(creature['id'])
+
+        text_widget = tk.Text(path_window, wrap=tk.WORD)
+        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        if path:
+            text_widget.insert(tk.END, f"Путь до существа '{creature['name']}':\n\n")
+            for i, step in enumerate(path):
+                if step['is_question']:
+                    text_widget.insert(tk.END, f"{i + 1}. Вопрос: {step['name']}\n")
+                else:
+                    text_widget.insert(tk.END, f"{i + 1}. Существо: {step['name']}\n")
+
+                if 'answer' in step and step['answer'] is not None:
+                    answer_text = "Да" if step['answer'] else "Нет"
+                    text_widget.insert(tk.END, f"   Ответ: {answer_text}\n\n")
+                else:
+                    text_widget.insert(tk.END, "\n")
+        else:
+            text_widget.insert(tk.END, f"Не удалось построить путь до существа '{creature['name']}'")
+
+        text_widget.config(state=tk.DISABLED)
+
+    def get_path_to_creature(self, creature_id):
+        path = []
+        current_id = creature_id
+        conn = self.get_db_connection()
+
+        while current_id:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM variants WHERE id = ?", (current_id,))
+            current_node = cursor.fetchone()
+
+            if not current_node:
+                break
+
+            parent_answer = None
+            if current_node['parent_id']:
+                cursor.execute("SELECT parent_answer FROM variants WHERE id = ?", (current_id,))
+                answer_row = cursor.fetchone()
+                if answer_row:
+                    parent_answer = answer_row['parent_answer']
+
+            node_info = {
+                'id': current_node['id'],
+                'name': current_node['name'],
+                'is_question': current_node['is_question'],
+                'answer': parent_answer
+            }
+            path.insert(0, node_info)
+
+            current_id = current_node['parent_id']
+
+        conn.close()
+        return path
 
     def yes_clicked(self):
         self.current_answer = '1'
