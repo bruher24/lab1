@@ -484,7 +484,7 @@ class Game:
 
         cursor.execute("""
             INSERT OR IGNORE INTO variants (id, parent_id, parent_answer, is_question, name)
-            VALUES (1, NULL, NULL, 0, 'Кот')
+            VALUES (1, NULL, NULL, 0, 'Феникс')
         """)
 
         conn.commit()
