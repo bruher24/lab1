@@ -47,7 +47,7 @@ class Game:
         self.btn_bd.place(x=390, y=240, anchor='center')
 
         self.btn_search = tk.Button(self.root, text='Поиск существа', fg='black', command=self.open_search_window)
-        self.btn_search.place(x=50, y=280, anchor='center')
+        self.btn_search.place(x=70, y=280, anchor='center')
 
         self.btn_yes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
         self.btn_no = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
