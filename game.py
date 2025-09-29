@@ -244,17 +244,27 @@ class Game:
 
         if path:
             text_widget.insert(tk.END, f"Путь до существа '{creature['name']}':\n\n")
-            for i, step in enumerate(path):
-                if step['is_question']:
-                    text_widget.insert(tk.END, f"{i + 1}. Вопрос: {step['name']}\n")
-                else:
-                    text_widget.insert(tk.END, f"{i + 1}. Существо: {step['name']}\n")
 
-                if 'answer' in step and step['answer'] is not None:
-                    answer_text = "Да" if step['answer'] else "Нет"
-                    text_widget.insert(tk.END, f"   Ответ: {answer_text}\n\n")
+            first_node = path[0]
+            if first_node['is_question']:
+                text_widget.insert(tk.END, f"1. Вопрос: {first_node['name']}\n")
+            else:
+                text_widget.insert(tk.END, f"1. Существо: {first_node['name']}\n")
+
+            for i in range(1, len(path)):
+                current_node = path[i]
+                previous_answer = current_node['answer']
+
+                answer_text = "Да" if previous_answer else "Нет"
+                text_widget.insert(tk.END, f"   Ответ: {answer_text}\n")
+
+                if current_node['is_question']:
+                    text_widget.insert(tk.END, f"{i + 1}. Вопрос: {current_node['name']}\n")
                 else:
-                    text_widget.insert(tk.END, "\n")
+                    text_widget.insert(tk.END, f"{i + 1}. Существо: {current_node['name']}\n")
+
+            text_widget.insert(tk.END, f"   Ответ: Да\n")
+            text_widget.insert(tk.END, f"{len(path) + 1}. Это точно {creature['name']}!\n")
         else:
             text_widget.insert(tk.END, f"Не удалось построить путь до существа '{creature['name']}'")
 
