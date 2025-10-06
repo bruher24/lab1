@@ -7,7 +7,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('database.db', '.')],
-    hiddenimports=['sqlite3'],
+    hiddenimports=['sqlite3', 'ttkbootstrap', 'importlib.resources'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -18,7 +18,7 @@ a = Analysis(
     noarchive=False,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)  # Исправленная строка
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,

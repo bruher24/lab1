@@ -1,9 +1,10 @@
+import sqlite3
 import tkinter as tk
 import uuid
-from tkinter import ttk
-from tkinter import *
-import sqlite3
 from tkinter import messagebox
+
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 
 class Game:
@@ -28,33 +29,96 @@ class Game:
         self.adding_new = False
         self.log = []
 
-        self.root = tk.Tk()
-        self.root.title('Угадайка: мифические существа')
-        self.root.geometry('450x300')
+        self.root = ttk.Window(
+            title='Угадайка: мифические существа',
+            themename='darkly',  # Можно выбрать: 'darkly', 'flatly', 'litera', 'minty' и др.
+            size=(500, 400),
+            resizable=(False, False)
+        )
+        self.setup_ui()
 
-        self.lbl = tk.Label(self.root, text='Нажмите "Начать игру"')
-        self.lbl.place(x=225, y=100, anchor='center')
+    def setup_ui(self):
+        style = ttk.Style()
+        style.configure('Success.TButton', font=('Helvetica', 10))
+        style.configure('Danger.TButton', font=('Helvetica', 10))
 
-        self.btn_start_game = tk.Button(self.root, text='Начать игру', command=self.play)
-        self.btn_start_game.place(x=225, y=150, anchor='center')
+        self.lbl = ttk.Label(
+            self.root,
+            text='Нажмите "Начать игру"',
+            font=('Helvetica', 12),
+            anchor='center'
+        )
+        self.lbl.place(relx=0.5, rely=0.3, anchor='center')
 
-        self.btnReset = tk.Button(self.root, text='Перезапуск', fg='black', command=self.reset)
-        self.btnReset.place(x=390, y=280, anchor='center')
+        self.btn_start_game = ttk.Button(
+            self.root,
+            text='Начать игру',
+            command=self.play,
+            style='Success.TButton',
+            width=15
+        )
+        self.btn_start_game.place(relx=0.5, rely=0.5, anchor='center')
 
-        self.btn_log = tk.Button(self.root, text='Показать путь до ответа', fg='black', command=self.show_log)
+        self.btnReset = ttk.Button(
+            self.root,
+            text='Перезапуск',
+            command=self.reset,
+            style='Secondary.TButton'
+        )
+        self.btnReset.place(relx=0.9, rely=0.95, anchor='se')
 
-        self.btn_bd = tk.Button(self.root, text='Показать БД', fg='black', command=self.show_bd)
-        self.btn_bd.place(x=390, y=240, anchor='center')
+        self.btn_bd = ttk.Button(
+            self.root,
+            text='Показать БД',
+            command=self.show_bd,
+            style='Info.TButton'
+        )
+        self.btn_bd.place(relx=0.9, rely=0.85, anchor='se')
 
-        self.btn_search = tk.Button(self.root, text='Поиск существа', fg='black', command=self.open_search_window)
-        self.btn_search.place(x=70, y=280, anchor='center')
+        self.btn_search = ttk.Button(
+            self.root,
+            text='Поиск существа',
+            command=self.open_search_window,
+            style='Info.TButton'
+        )
+        self.btn_search.place(relx=0.1, rely=0.95, anchor='sw')
 
-        self.btn_yes = tk.Button(self.root, text='Да', fg='green', command=self.yes_clicked)
-        self.btn_no = tk.Button(self.root, text='Нет', fg='red', command=self.no_clicked)
+        self.btn_yes = ttk.Button(
+            self.root,
+            text='Да',
+            command=self.yes_clicked,
+            style='Success.TButton',
+            width=10
+        )
 
-        self.text_input = tk.Entry(self.root, width=20)
+        self.btn_no = ttk.Button(
+            self.root,
+            text='Нет',
+            command=self.no_clicked,
+            style='Danger.TButton',
+            width=10
+        )
 
-        self.btn_confirm = tk.Button(self.root, text='Подтвердить', fg='green', command=self.confirm_clicked)
+        # Поле ввода
+        self.text_input = ttk.Entry(
+            self.root,
+            width=25,
+            font=('Helvetica', 10)
+        )
+
+        self.btn_confirm = ttk.Button(
+            self.root,
+            text='Подтвердить',
+            command=self.confirm_clicked,
+            style='Primary.TButton'
+        )
+
+        self.btn_log = ttk.Button(
+            self.root,
+            text='Показать путь до ответа',
+            command=self.show_log,
+            style='Secondary.TButton'
+        )
 
     def build_tree(self, variants):
         nodes = {}
@@ -143,12 +207,12 @@ class Game:
         db_window.geometry("600x400")
 
         tree_frame = ttk.Frame(db_window)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         tree = ttk.Treeview(tree_frame, columns=("type", "answer"), show="tree headings")
-        tree.column("#0", width=300, anchor=tk.W)
-        tree.column("type", width=100, anchor=tk.CENTER)
-        tree.column("answer", width=100, anchor=tk.CENTER)
+        tree.column("#0", width=300, anchor='w')
+        tree.column("type", width=100, anchor='center')
+        tree.column("answer", width=100, anchor='center')
 
         tree.heading("#0", text="Вопрос / Существо")
         tree.heading("type", text="Тип")
@@ -157,10 +221,10 @@ class Game:
         tree.tag_configure('question', background='#e6f3ff')
         tree.tag_configure('creature', background='#f0f8e6')
 
-        scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side='right', fill='y')
+        tree.pack(side='left', fill='both', expand=True)
 
         conn = self.get_db_connection()
         cursor = conn.cursor()
@@ -187,7 +251,7 @@ class Game:
             tag = 'question' if db_item['is_question'] else 'creature'
 
             tree_id = tree.insert(parent_tree_id, "end", text=item_text,
-                                  values=(item_type, answer_text), tags=(tag))
+                                  values=(item_type, answer_text), tags=tag)
             node_ids[db_item['id']] = tree_id
 
             children = [item for item in items if item['parent_id'] == db_item['id']]
@@ -239,8 +303,8 @@ class Game:
 
         path = self.get_path_to_creature(creature['id'])
 
-        text_widget = tk.Text(path_window, wrap=tk.WORD)
-        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        text_widget = tk.Text(path_window, wrap='word')
+        text_widget.pack(fill='both', expand=True, padx=10, pady=10)
 
         if path:
             text_widget.insert(tk.END, f"Путь до существа '{creature['name']}':\n\n")
@@ -268,7 +332,7 @@ class Game:
         else:
             text_widget.insert(tk.END, f"Не удалось построить путь до существа '{creature['name']}'")
 
-        text_widget.config(state=tk.DISABLED)
+        text_widget.config(state='disabled')
 
     def get_path_to_creature(self, creature_id):
         path = []
