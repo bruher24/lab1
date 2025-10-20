@@ -40,86 +40,121 @@ class Game:
         self.setup_ui()
 
     def setup_ui(self):
-        style = ttk.Style()
-        style.configure('Success.TButton', font=('Helvetica', 10))
-        style.configure('Danger.TButton', font=('Helvetica', 10))
+        # Основной фрейм для центрирования содержимого
+        self.main_frame = ttk.Frame(self.root)
+        self.main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+        # Центральный фрейм для основного содержимого
+        self.center_frame = ttk.Frame(self.main_frame)
+        self.center_frame.pack(expand=True, fill='both', pady=20)
 
         self.lbl = ttk.Label(
-            self.root,
+            self.center_frame,
             text='Нажмите "Начать игру"',
             font=('Helvetica', 12),
-            anchor='center'
+            anchor='center',
+            wraplength=400
         )
-        self.lbl.place(relx=0.5, rely=0.3, anchor='center')
+        self.lbl.pack(pady=20)
+
+        # Фрейм для кнопки начала игры
+        self.start_frame = ttk.Frame(self.center_frame)
+        self.start_frame.pack(pady=10)
 
         self.btn_start_game = ttk.Button(
-            self.root,
+            self.start_frame,
             text='Начать игру',
             command=self.play,
-            style='Success.TButton',
+            bootstyle='success',
             width=15
         )
-        self.btn_start_game.place(relx=0.5, rely=0.5, anchor='center')
+        self.btn_start_game.pack(pady=10)
 
-        self.btnReset = ttk.Button(
-            self.root,
-            text='Перезапуск',
-            command=self.reset,
-            style='Secondary.TButton'
-        )
-        self.btnReset.place(relx=0.9, rely=0.95, anchor='se')
-
-        self.btn_bd = ttk.Button(
-            self.root,
-            text='Показать БД',
-            command=self.show_bd,
-            style='Info.TButton'
-        )
-        self.btn_bd.place(relx=0.9, rely=0.85, anchor='se')
-
-        self.btn_search = ttk.Button(
-            self.root,
-            text='Поиск существа',
-            command=self.open_search_window,
-            style='Info.TButton'
-        )
-        self.btn_search.place(relx=0.1, rely=0.95, anchor='sw')
+        # Фрейм для кнопок Да/Нет
+        self.yes_no_frame = ttk.Frame(self.center_frame)
 
         self.btn_yes = ttk.Button(
-            self.root,
+            self.yes_no_frame,
             text='Да',
             command=self.yes_clicked,
-            style='Success.TButton',
+            bootstyle='success',
             width=10
         )
+        self.btn_yes.pack(side='left', padx=10)
 
         self.btn_no = ttk.Button(
-            self.root,
+            self.yes_no_frame,
             text='Нет',
             command=self.no_clicked,
-            style='Danger.TButton',
+            bootstyle='danger',
             width=10
         )
+        self.btn_no.pack(side='left', padx=10)
+
+        # Фрейм для ввода текста
+        self.input_frame = ttk.Frame(self.center_frame)
 
         self.text_input = ttk.Entry(
-            self.root,
+            self.input_frame,
             width=25,
             font=('Helvetica', 10)
         )
+        self.text_input.pack(pady=5)
 
         self.btn_confirm = ttk.Button(
-            self.root,
+            self.input_frame,
             text='Подтвердить',
             command=self.confirm_clicked,
-            style='Primary.TButton'
+            bootstyle='primary'
         )
+        self.btn_confirm.pack(pady=5)
+
+        # Фрейм для кнопки показа лога
+        self.log_frame = ttk.Frame(self.center_frame)
 
         self.btn_log = ttk.Button(
-            self.root,
+            self.log_frame,
             text='Показать путь до ответа',
             command=self.show_log,
-            style='Secondary.TButton'
+            bootstyle='secondary'
         )
+        self.btn_log.pack(pady=10)
+
+        # Нижний фрейм для кнопок управления
+        self.bottom_frame = ttk.Frame(self.main_frame)
+        self.bottom_frame.pack(side='bottom', fill='x', pady=10)
+
+        # Левый фрейм для кнопок поиска и БД
+        self.left_bottom_frame = ttk.Frame(self.bottom_frame)
+        self.left_bottom_frame.pack(side='left')
+
+        self.btn_search = ttk.Button(
+            self.left_bottom_frame,
+            text='Поиск существа',
+            command=self.open_search_window,
+            bootstyle='info'
+        )
+        self.btn_search.pack(side='left', padx=5)
+
+        self.btn_bd = ttk.Button(
+            self.left_bottom_frame,
+            text='Показать БД',
+            command=self.show_bd,
+            bootstyle='info'
+        )
+        self.btn_bd.pack(side='left', padx=5)
+
+        # Правый фрейм для кнопки перезапуска
+        self.right_bottom_frame = ttk.Frame(self.bottom_frame)
+        self.right_bottom_frame.pack(side='right')
+
+        self.btnReset = ttk.Button(
+            self.right_bottom_frame,
+            text='Перезапуск',
+            command=self.reset,
+            bootstyle='secondary'
+        )
+        self.btnReset.pack(side='right', padx=5)
 
     def build_tree(self, variants):
         nodes = {}
@@ -147,11 +182,8 @@ class Game:
 
     def play(self):
         self.lbl.configure(text='Вы загадали мифическое существо?')
-        self.btn_start_game.place_forget()
-
-        self.btn_yes.place(x=175, y=150, anchor='center')
-        self.btn_no.place(x=275, y=150, anchor='center')
-
+        self.btn_start_game.pack_forget()
+        self.yes_no_frame.pack(pady=10)
         self.waiting_for_answer = True
 
     def reset(self):
@@ -168,14 +200,15 @@ class Game:
         self.last_answer = None
         self.adding_new = False
         self.log = []
+
+        # Скрываем все дополнительные элементы
+        self.yes_no_frame.pack_forget()
+        self.input_frame.pack_forget()
+        self.log_frame.pack_forget()
+
+        # Показываем начальное состояние
         self.lbl.configure(text='Нажмите "Начать игру"')
-        self.lbl.place(x=225, y=100, anchor='center')
-        self.btn_start_game.place(x=225, y=150, anchor='center')
-        self.btn_yes.place_forget()
-        self.btn_no.place_forget()
-        self.btn_confirm.place_forget()
-        self.text_input.place_forget()
-        self.btn_log.place_forget()
+        self.btn_start_game.pack(pady=10)
         self.variants = self.build_tree(self.full_variants)
 
     def show_log(self):
@@ -196,10 +229,10 @@ class Game:
                 output += '\n'
                 counter = 0
 
-        if output[-2:] != '\n':
+        if output[-2:] == '->':
             output = output[:-2]
 
-        self.btn_log.place_forget()
+        self.log_frame.pack_forget()
         self.lbl.configure(text=output)
 
     def show_bd(self):
@@ -219,8 +252,9 @@ class Game:
         tree.heading("type", text="Тип")
         tree.heading("answer", text="Ответ родителя")
 
-        tree.tag_configure('question', background='#e6f3ff')
-        tree.tag_configure('creature', background='#f0f8e6')
+        # Исправляем цвета для темной темы
+        tree.tag_configure('question', background='#3d3d3d', foreground='white')
+        tree.tag_configure('creature', background='#2d2d2d', foreground='white')
 
         scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
@@ -398,31 +432,27 @@ class Game:
             self.new_parent_answer = self.current_answer
             self.save_new_creature()
             self.lbl.configure(text='Спасибо! Я узнал новое существо!')
-            self.btn_confirm.place_forget()
-            self.text_input.delete(0, END)
-            self.text_input.place_forget()
+            self.input_frame.pack_forget()
+            self.text_input.delete(0, tk.END)
         elif self.new_name is None:
             self.new_name = self.text_buffer.capitalize()
             self.lbl.configure(text='Что отличает ' + self.new_name + ' от ' + self.current_obj['name'] + '?')
-            self.text_input.delete(0, END)
+            self.text_input.delete(0, tk.END)
             self.waiting_for_answer = True
         elif self.new_question is None:
             self.new_question = self.text_buffer.capitalize()
             if not self.new_question.endswith('?'):
                 self.new_question += '?'
             self.lbl.configure(text='Для ' + self.new_name + ' ответ "Да" или "Нет"?')
-            self.text_input.place_forget()
-            self.btn_confirm.place_forget()
-            self.btn_yes.place(x=175, y=150, anchor='center')
-            self.btn_no.place(x=275, y=150, anchor='center')
-            self.text_input.delete(0, END)
+            self.input_frame.pack_forget()
+            self.yes_no_frame.pack(pady=10)
+            self.text_input.delete(0, tk.END)
             self.waiting_for_answer = True
         elif self.new_parent_answer is None:
             self.new_parent_answer = self.current_answer
             self.save_new_creature()
             self.lbl.configure(text='Спасибо! Я узнал новое существо!')
-            self.btn_no.place_forget()
-            self.btn_yes.place_forget()
+            self.yes_no_frame.pack_forget()
 
     def save_new_creature(self):
         conn = self.get_db_connection()
@@ -433,15 +463,17 @@ class Game:
         if str(self.current_obj['is_question']) == '0':
             new_parent_id = str(uuid.uuid4())
             cursor.execute("""
-                INSERT OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
+                           INSERT
+                           OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
                 VALUES (?, ?, ?, ?, ?)
-            """,
+                           """,
                            (new_parent_id, self.new_question, self.last_answer, str(self.current_obj['id']), 1))
 
         cursor.execute("""
-                    INSERT OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
+                       INSERT
+                       OR IGNORE INTO variants (id, name, parent_answer, parent_id, is_question)
                     VALUES (?, ?, ?, ?, ?)
-                """,
+                       """,
                        (str(uuid.uuid4()), self.new_name, self.new_parent_answer, new_parent_id, 0))
 
         conn.commit()
@@ -468,15 +500,12 @@ class Game:
 
     def cant_start(self):
         self.lbl.configure(text='Вы должны загадать мифическое существо, чтобы начать!')
-        self.btn_no.place_forget()
-        self.btn_yes.place_forget()
+        self.yes_no_frame.pack_forget()
 
     def give_up(self):
         self.lbl.configure(text="Я сдаюсь! Какое существо вы загадали?")
-        self.btn_yes.place_forget()
-        self.btn_no.place_forget()
-        self.text_input.place(x=225, y=130, anchor='center')
-        self.btn_confirm.place(x=225, y=180, anchor='center')
+        self.yes_no_frame.pack_forget()
+        self.input_frame.pack(pady=10)
         self.waiting_for_answer = True
         self.waiting_for_name = False
         self.new_name = None
@@ -489,9 +518,8 @@ class Game:
         answer = 'Это точно ' + self.variants[str(self.current_variant)]['name'] + '!'
         self.lbl.configure(text=answer)
         self.log.append(answer)
-        self.btn_yes.place_forget()
-        self.btn_no.place_forget()
-        self.btn_log.place(x=225, y=150, anchor='center')
+        self.yes_no_frame.pack_forget()
+        self.log_frame.pack(pady=10)
 
     def process_answer(self):
         if not self.waiting_for_answer:
