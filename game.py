@@ -1,6 +1,8 @@
 import sqlite3
 import tkinter as tk
 import uuid
+import os
+import sys
 from tkinter import messagebox
 
 import ttkbootstrap as ttk
@@ -31,7 +33,7 @@ class Game:
 
         self.root = ttk.Window(
             title='Угадайка: мифические существа',
-            themename='darkly',  # Можно выбрать: 'darkly', 'flatly', 'litera', 'minty' и др.
+            themename='darkly',
             size=(500, 400),
             resizable=(False, False)
         )
@@ -99,7 +101,6 @@ class Game:
             width=10
         )
 
-        # Поле ввода
         self.text_input = ttk.Entry(
             self.root,
             width=25,
@@ -528,38 +529,57 @@ class Game:
                 else:
                     self.give_up()
 
-    def get_db_connection(self):
-        import sys
-        import os
-
+    def get_db_path(self):
         if getattr(sys, 'frozen', False):
-            base_path = sys._MEIPASS
+            base_path = os.path.dirname(sys.executable)
         else:
             base_path = os.path.dirname(os.path.abspath(__file__))
 
-        db_path = os.path.join(base_path, 'database.db')
+        return os.path.join(base_path, 'database.db')
+
+    def get_db_connection(self):
+        db_path = self.get_db_path()
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         return conn
 
     def init_db(self):
+        db_path = self.get_db_path()
+
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
         conn = self.get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS variants (
-                id VARCHAR PRIMARY KEY,
-                parent_id VARCHAR,
-                parent_answer TINYINT,
-                is_question TINYINT,
-                name VARCHAR NOT NULL UNIQUE
-            )
-        """)
+                       CREATE TABLE IF NOT EXISTS variants
+                       (
+                           id
+                           VARCHAR
+                           PRIMARY
+                           KEY,
+                           parent_id
+                           VARCHAR,
+                           parent_answer
+                           TINYINT,
+                           is_question
+                           TINYINT,
+                           name
+                           VARCHAR
+                           NOT
+                           NULL
+                           UNIQUE
+                       )
+                       """)
 
-        cursor.execute("""
-            INSERT OR IGNORE INTO variants (id, parent_id, parent_answer, is_question, name)
-            VALUES (1, NULL, NULL, 0, 'Феникс')
-        """)
+        cursor.execute("SELECT COUNT(*) as count FROM variants")
+        count = cursor.fetchone()['count']
+
+        if count == 0:
+            cursor.execute("""
+                           INSERT INTO variants (id, parent_id, parent_answer, is_question, name)
+                           VALUES (1, NULL, NULL, 0, 'Феникс')
+                           """)
 
         conn.commit()
         conn.close()

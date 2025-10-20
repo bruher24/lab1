@@ -3,11 +3,11 @@
 block_cipher = None
 
 a = Analysis(
-    ['game.py'],
+    ['game.py'],  # Убедитесь, что имя вашего файла правильное
     pathex=[],
     binaries=[],
-    datas=[('database.db', '.')],
-    hiddenimports=['sqlite3', 'ttkbootstrap', 'importlib.resources'],
+    datas=[],  # Убрали database.db из datas
+    hiddenimports=['sqlite3', 'ttkbootstrap'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
